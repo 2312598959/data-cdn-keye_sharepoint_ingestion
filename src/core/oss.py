@@ -33,14 +33,19 @@ class OSS:
     def get_bucket(self):
         try:
             self.auth = OSS._authorize(self.temp_creds)
+            bucket = oss2.Bucket(
+                self.auth,
+                self._oss_endpoint,
+                self._oss_bucket,
+            )
         except Exception as e:
-            print("Failed to authorize:", e)
+            logger.info("Failed to authorize:", e)
             self.auth = Auth(self.access_key_id, self.access_key_secret)
-        bucket = oss2.Bucket(
-            self.auth,
-            self._oss_endpoint,
-            self._oss_bucket,
-        )
+            bucket = oss2.Bucket(
+                self.auth,
+                self._oss_endpoint,
+                self._oss_bucket,
+            )
         try:
             bucket.get_bucket_acl()
             logger.info(f"OSS login success")
