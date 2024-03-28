@@ -62,7 +62,7 @@ async def invoke(incoming_request: Request):
     #     name=payload.json["kms_secret_cdn_ke_fc_sharepoint_dev"],
     # )
     # sp_password = kms_secret["KE_SHAREPOINT_PASSWORD"]
-    sp_password = payload["sp_website"]
+    sp_password = payload["sp_password"]
 
     current_date_str = datetime.now().strftime("%Y%m%d")
 
