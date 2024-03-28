@@ -31,10 +31,11 @@ class OSS:
         )
 
     def get_bucket(self):
-        if self.temp_creds is None:
-            self.auth = Auth(self.access_key_id, self.access_key_secret)
-        else:
+        try:
             self.auth = OSS._authorize(self.temp_creds)
+        except Exception as e:
+            print("Failed to authorize:", e)
+            self.auth = Auth(self.access_key_id, self.access_key_secret)
         bucket = oss2.Bucket(
             self.auth,
             self._oss_endpoint,
