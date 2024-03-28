@@ -1,0 +1,15 @@
+{
+  "validate_config_excel": "ke/check_folder/校验配置表.xlsx",
+  "oss_error_folder": "ke/error_folder",
+  "oss_archive_folder": "ke/archive_folder",
+  "oss_data_folder": "ke/data_folder",
+  "oss_check_log": "ke/check_log",
+  "sp_user_folder": "User Folder",
+  "sp_archive_folder": "Archive Folder",
+  "oss_endpoint": "http://oss-cn-hangzhou.aliyuncs.com",
+  "oss_bucket": "kering-cdn-prod-keye",
+  "sp_username": "serv.yechtech@kering.com",
+  "sp_website": "https://kering.sharepoint.com",
+  "sp_site": "https://kering.sharepoint.com/sites/Kering_Eyewear/",
+  "sp_library_name": "KEYE DIGITAL WARRANTY CARD BI"
+}
