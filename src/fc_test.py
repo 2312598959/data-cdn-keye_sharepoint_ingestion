@@ -33,13 +33,6 @@ async def invoke(incoming_request: Request):
     payload = await incoming_request.json()
     logger.info(f"Request body -> {payload}")
 
-    # Init temporary credentials
-    temp_creds = Temporary(
-        access_key_id=incoming_request.headers["x-fc-access-key-id"],
-        access_key_secret=incoming_request.headers["x-fc-access-key-secret"],
-        security_token=incoming_request.headers["x-fc-security-token"],
-    )
-
     oss_endpoint = payload["oss_endpoint"]
     oss_bucket = payload["oss_bucket"]
     validate_config_excel = payload["validate_config_excel"]
@@ -54,16 +47,27 @@ async def invoke(incoming_request: Request):
     sp_library_name = payload["sp_library_name"]
     sp_user_folder = payload["sp_user_folder"]
     sp_archive_folder = payload["sp_archive_folder"]
+    access_key_id = payload.get("access_key_id")
+    access_key_secret = payload.get("access_key_secret")
 
-    # # Get KMS secret
-    # kms_secret = get_secret(
-    #     temp_creds=temp_creds,
-    #     region=payload.json["kms_secret_region"],
-    #     name=payload.json["kms_secret_cdn_ke_fc_sharepoint_dev"],
-    # )
-    # sp_password = kms_secret["KE_SHAREPOINT_PASSWORD"]
-    sp_password = payload["sp_password"]
+    # Init temporary credentials
+    temp_creds = Temporary(
+        access_key_id=incoming_request.headers["x-fc-access-key-id"],
+        access_key_secret=incoming_request.headers["x-fc-access-key-secret"],
+        security_token=incoming_request.headers["x-fc-security-token"],
+    )
 
+    try:
+        # Get KMS secret
+        kms_secret = get_secret(
+            temp_creds=temp_creds,
+            region=payload["kms_secret_region"],
+            name=payload["kms_secret_cdn_ke_fc_sharepoint_dev"],
+        )
+        sp_password = kms_secret["KE_SHAREPOINT_PASSWORD"]
+    except Exception as e:
+        print("Failed to kms_secret:", e)
+        sp_password = payload.get("sp_password")
     current_date_str = datetime.now().strftime("%Y%m%d")
 
     # Create an OSS instance
@@ -71,8 +75,8 @@ async def invoke(incoming_request: Request):
         temp_creds=temp_creds,
         oss_endpoint=oss_endpoint,
         oss_bucket=oss_bucket,
-        access_key_id=None,
-        access_key_secret=None,
+        access_key_id=access_key_id,
+        access_key_secret=access_key_secret,
     )
     bucket = oss.get_bucket()
 
@@ -85,7 +89,6 @@ async def invoke(incoming_request: Request):
         sharepoint_library_name=sp_library_name,
     )
     site = sp.get_site()
-
     validate_config_data_stream = oss.get_oss_data_stream(bucket, validate_config_excel)
 
     validate_config_df, validate_sheet_list = get_excel_df(
