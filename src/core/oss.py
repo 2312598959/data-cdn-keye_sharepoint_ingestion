@@ -38,6 +38,7 @@ class OSS:
                 self._oss_endpoint,
                 self._oss_bucket,
             )
+            bucket.get_bucket_acl()
         except Exception as e:
             logger.info("Failed to authorize:", e)
             self.auth = Auth(self.access_key_id, self.access_key_secret)
