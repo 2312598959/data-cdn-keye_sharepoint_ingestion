@@ -68,7 +68,7 @@ async def invoke(incoming_request: Request):
         )
         sp_password = kms_secret["KE_SHAREPOINT_PASSWORD"]
     except Exception as e:
-        print("Failed to kms_secret:", e)
+        logger.info("Failed to kms_secret:", e)
         sp_password = payload.get("sp_password")
     current_date_str = datetime.now().strftime("%Y%m%d")
 
