@@ -28,8 +28,12 @@ async def invoke(incoming_request: Request):
     logger.info(f"Request header -> {incoming_request.headers}")
 
     # Get incoming request body
-    payload = await incoming_request.json()
-    logger.info(f"Request body -> {payload}")
+    body = incoming_request.json()
+    logger.info(f"Request body -> {body}")
+
+    # Get incoming payload
+    payload = json.loads(body["payload"])
+    logger.info(f"payload -> {payload}")
 
     oss_endpoint = payload["oss_endpoint"]
     oss_bucket = payload["oss_bucket"]
