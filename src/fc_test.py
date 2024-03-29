@@ -32,7 +32,7 @@ async def invoke(incoming_request: Request):
     logger.info(f"Request body -> {body}")
 
     # Get incoming payload
-    payload = json.loads(body["payload"])
+    payload = body["payload"]
     logger.info(f"payload -> {payload}")
 
     oss_endpoint = payload["oss_endpoint"]
