@@ -28,7 +28,7 @@ async def invoke(incoming_request: Request):
     logger.info(f"Request header -> {incoming_request.headers}")
 
     # Get incoming request body
-    body = incoming_request.json()
+    body = await incoming_request.json()
     logger.info(f"Request body -> {body}")
 
     # Get incoming payload
