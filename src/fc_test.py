@@ -19,8 +19,6 @@ from core.kms import get_secret
 
 api = FastAPI()
 
-
-@api.get("/")
 @api.post("/invoke")
 async def invoke(incoming_request: Request):
     # Show version
