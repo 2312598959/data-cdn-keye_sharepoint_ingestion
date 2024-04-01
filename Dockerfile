@@ -17,5 +17,5 @@ COPY ./src /app/src
 
 ENV TZ="Asia/Shanghai"
 
-CMD cd src && uvicorn fc_test:api --host=0.0.0.0 --port=9000
+CMD cd src && uvicorn test_fc:api --host=0.0.0.0 --port=9000
 
