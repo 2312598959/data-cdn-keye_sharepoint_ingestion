@@ -82,6 +82,8 @@ def verify_excel_sheet(format_name, sheet_name, verify_sheet_df, original_data_d
 
 
 def verify_excel_data(sheet_name, column_value_check, target_data):
+    column_name_dict = {}
+    column_name_list = []
     # Create an SQLiteManager instance
     sqlite = SQLite()
 
@@ -91,101 +93,112 @@ def verify_excel_data(sheet_name, column_value_check, target_data):
     field_values = column_value_check["字段名"]
     for item, field_value in field_values.items():
         tmp1 = sqlite.query(sql=f"SELECT * FROM table1 where  `字段名` ='{field_value}' ")
-        field_value1 = field_value.replace(" ", "").replace("\t", "").replace("\n", "")
-        logger.info(f"target_column -> {field_value1}")
+        column_name = field_value.replace(" ", "").replace("\t", "").replace("\n", "")
+        logger.info(f"target_column -> {column_name}")
         # Get field value
-        field_values_list = target_data[field_value1].tolist()
-        field_values_df = pd.DataFrame(field_values_list, columns=["field_value"])
-        sqlite.to_sql(df=field_values_df, table_name="table2")
+        if column_name in target_data.columns:
+            field_values_list = target_data[column_name].tolist()
+            field_values_df = pd.DataFrame(field_values_list, columns=["field_value"])
+            sqlite.to_sql(df=field_values_df, table_name="table2")
 
-        # Non-empty validation
-        logger.info(
-            f"Non-empty validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
-        )
-        if tmp1["非空校验"].iloc[0] == "1":
-            tmp2 = sqlite.query(
-                sql=f"SELECT count(1) FROM table2 where IFNULL(field_value,'')='' "
+            # Non-empty validation
+            logger.info(
+                f"Non-empty validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
             )
+            if tmp1["非空校验"].iloc[0] == "1":
+                tmp2 = sqlite.query(
+                    sql=f"SELECT count(1) FROM table2 where IFNULL(field_value,'')='' "
+                )
 
-            query_result_count = tmp2.iloc[0, 0] if tmp2.shape[0] > 0 else 0
-            if query_result_count == 0:
-                logger.info("Non-empty validation passed")
+                query_result_count = tmp2.iloc[0, 0] if tmp2.shape[0] > 0 else 0
+                if query_result_count == 0:
+                    logger.info("Non-empty validation passed")
+                else:
+                    logger.info("Non-empty validation failed")
+                    break
             else:
-                logger.info("Non-empty validation failed")
-                break
-        else:
-            logger.info("Non-empty validation is not needed")
+                logger.info("Non-empty validation is not needed")
 
-        # Content format validation
-        logger.info(
-            f"Content format validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
-        )
-        if tmp1["内容格式校验"].iloc[0] == "1" and tmp1["字段类型"].iloc[0] == "日期":
-            result1 = True
-            for value in field_values_list:
-                try:
-                    datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    logger.info(f"Date format validation has failed -> {value}")
-                    result1 = False
+            # Content format validation
+            logger.info(
+                f"Content format validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
+            )
+            if tmp1["内容格式校验"].iloc[0] == "1" and tmp1["字段类型"].iloc[0] == "日期":
+                result1 = True
+                for value in field_values_list:
+                    try:
+                        datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        logger.info(f"Date format validation has failed -> {value}")
+                        result1 = False
+                        break
+
+                if result1:
+                    logger.info("Date format validation passed")
+                else:
+                    logger.info("Date format validation failed")
                     break
 
-            if result1:
-                logger.info("Date format validation passed")
-            else:
-                logger.info("Date format validation failed")
-                break
-
-        elif tmp1["内容格式校验"].iloc[0] == "1" and tmp1["字段类型"].iloc[0] == "小数":
-            result2 = True
-            for value in field_values_list:
-                if isinstance(value, float):
-                    logger.info(f"{value} is a decimal")
-                elif "." in str(value):
-                    if str(float(value)) == str(value) or float(str(value)) == value:
-                        logger.info(f"value is a decimal -> {value}")
+            elif tmp1["内容格式校验"].iloc[0] == "1" and tmp1["字段类型"].iloc[0] == "小数":
+                result2 = True
+                for value in field_values_list:
+                    if isinstance(value, float):
+                        logger.info(f"{value} is a decimal")
+                    elif "." in str(value):
+                        if (
+                            str(float(value)) == str(value)
+                            or float(str(value)) == value
+                        ):
+                            logger.info(f"value is a decimal -> {value}")
+                        else:
+                            logger.info(f"value is not a decimal -> {value}")
+                            result2 = False
                     else:
-                        logger.info(f"value is not a decimal -> {value}")
+                        logger.info(f"{value} is not a decimal")
                         result2 = False
+                if result2:
+                    logger.info("Decimal validation passed")
                 else:
-                    logger.info(f"{value} is not a decimal")
-                    result2 = False
-            if result2:
-                logger.info("Decimal validation passed")
+                    logger.info("Decimal validation failed")
+                    break
             else:
-                logger.info("Decimal validation failed")
-                break
-        else:
-            logger.info("Decimal validation is not needed")
+                logger.info("Decimal validation is not needed")
 
-        # Enumeration value validation
-        logger.info(
-            f"------------------------Enumeration value validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
-        )
-        if tmp1["枚举值校验"].iloc[0] == "1":
-            value = tmp1["枚举值校验规则"].iloc[0]
-            value_list = value.split(",")  # 将字符串按逗号拆分为列表
-            quoted_values = ", ".join(f"'{v.strip()}'" for v in value_list)
-            logger.info(f"value -> {quoted_values}")
-
-            tmp3 = sqlite.query(
-                sql=f"SELECT count(1) FROM table2 where  field_value  not in ({quoted_values}) and IFNULL(field_value,'')<>'' "
+            # Enumeration value validation
+            logger.info(
+                f"------------------------Enumeration value validation -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
             )
+            if tmp1["枚举值校验"].iloc[0] == "1":
+                value = tmp1["枚举值校验规则"].iloc[0]
+                value_list = value.split(",")  # 将字符串按逗号拆分为列表
+                quoted_values = ", ".join(f"'{v.strip()}'" for v in value_list)
+                logger.info(f"value -> {quoted_values}")
 
-            query_result_count = tmp3.iloc[0, 0] if tmp3.shape[0] > 0 else 0
-            if query_result_count == 0:
-                logger.info(f"Enumeration value validation passed")
+                tmp3 = sqlite.query(
+                    sql=f"SELECT count(1) FROM table2 where  field_value  not in ({quoted_values}) and IFNULL(field_value,'')<>'' "
+                )
+
+                query_result_count = tmp3.iloc[0, 0] if tmp3.shape[0] > 0 else 0
+                if query_result_count == 0:
+                    logger.info(f"Enumeration value validation passed")
+                else:
+                    logger.info(f"Enumeration value validation failed")
+                    continue
             else:
-                logger.info(f"Enumeration value validation failed")
-                continue
-        else:
-            logger.info("Enumeration value validation is not needed")
+                logger.info("Enumeration value validation is not needed")
 
-        logger.info(
-            f"Validation passed -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
-        )
+            # column_name_list = column_name_list.append(column_name)
+            # field_content_validation = 0
+            # column_name_dict[column_name] = field_content_validation
+            logger.info(
+                f"Validation passed -> sheet:'{sheet_name}' ,field_value:'{field_value}'"
+            )
+        else:
+            continue
     # Close DB
     sqlite.close()
+
+    # return column_name_list, column_name_dict
 
 
 def get_excel_df(
