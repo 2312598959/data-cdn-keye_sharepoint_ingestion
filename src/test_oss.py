@@ -40,7 +40,7 @@ async def invoke(incoming_request: Request):
                 endpoint="https://oss-cn-hangzhou-internal.aliyuncs.com",
                 bucket_name="kering-cdn-prod-sharepoint",
             )
-            await bucket.get_bucket_acl()
+            bucket.get_bucket_acl()
             logger.info(f"OSS login success")
             return bucket
         except oss2.exceptions.NoSuchBucket:
